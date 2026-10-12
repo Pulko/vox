@@ -128,8 +128,13 @@ final class AppCoordinator: NSObject {
     }
 
     private func installStatusItem() {
-        let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-        item.button?.title = "Vox"
+        let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
+        if let button = item.button {
+            button.image = Self.menuBarIcon
+            button.imagePosition = .imageOnly
+            button.title = ""
+            button.toolTip = "Vox"
+        }
         let menu = NSMenu()
         let status = NSMenuItem(title: "Starting…", action: nil, keyEquivalent: "")
         status.isEnabled = false
@@ -161,6 +166,34 @@ final class AppCoordinator: NSObject {
     private func setStatus(_ text: String) {
         statusLabel?.title = text
     }
+
+    private static let menuBarIcon: NSImage = {
+        let size = NSSize(width: 18, height: 18)
+        let image = NSImage(size: size, flipped: false) { _ in
+            NSColor.black.setFill()
+            NSBezierPath(ovalIn: NSRect(x: 1.2, y: 1.2, width: 15.6, height: 15.6)).fill()
+
+            NSGraphicsContext.current?.compositingOperation = .destinationOut
+            let barWidth: CGFloat = 1.45
+            let origins: [(CGFloat, CGFloat)] = [
+                (5.7, 4.4),
+                (7.6, 7.8),
+                (9.5, 5.6),
+                (11.4, 6.8),
+            ]
+            for (x, height) in origins {
+                let bar = NSBezierPath(
+                    roundedRect: NSRect(x: x, y: 9 - height / 2, width: barWidth, height: height),
+                    xRadius: barWidth / 2,
+                    yRadius: barWidth / 2
+                )
+                bar.fill()
+            }
+            return true
+        }
+        image.isTemplate = true
+        return image
+    }()
 
     @objc private func openAccessibility() {
         Permissions.openAccessibilitySettings()
