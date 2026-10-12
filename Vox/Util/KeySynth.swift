@@ -2,7 +2,6 @@ import CoreGraphics
 import Foundation
 
 enum KeySynth {
-    static let cKey: CGKeyCode = 0x08
     static let vKey: CGKeyCode = 0x09
 
     static func postCommand(_ key: CGKeyCode) {
@@ -17,10 +16,6 @@ enum KeySynth {
         up.flags = .maskCommand
         down.post(tap: .cghidEventTap)
         up.post(tap: .cghidEventTap)
-    }
-
-    static func copy() {
-        postCommand(cKey)
     }
 
     static func paste() {
