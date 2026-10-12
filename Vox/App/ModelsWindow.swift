@@ -81,6 +81,10 @@ private struct ModelsView: View {
                     onNone: { Task { await host.useParser(nil) } },
                     onUse: { option in Task { await host.useParser(option) } }
                 )
+                Text("Weights download from Hugging Face under that model’s license, then stay on this Mac.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
                 if !state.note.isEmpty {
                     Text(state.note)
                         .font(.caption)

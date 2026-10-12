@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		14A215ECD5B3E7A517932C26 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 49DEC543821E18688705EEF5 /* Assets.xcassets */; };
 		163D5344ADAB69CC3F54F8D1 /* PromptBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A92FC8745AB84A50F2A53935 /* PromptBuilder.swift */; };
 		1855B4A4068E187FE7907CD4 /* VoxError.swift in Sources */ = {isa = PBXBuildFile; fileRef = C332CE35E14DA9EBC4A77E20 /* VoxError.swift */; };
 		2B1D75C4F74BF62069744FC9 /* SpokenCleanup.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAF23706BCFA59889B480DF6 /* SpokenCleanup.swift */; };
@@ -19,9 +20,11 @@
 		5B8057F6D8C5EF2692823EF8 /* VoxApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9B07E51CDF948F3FDE22A7A /* VoxApp.swift */; };
 		5CE46F1C962D7BCFF5CD5943 /* KeyboardShortcuts in Frameworks */ = {isa = PBXBuildFile; productRef = FD4BDF21F4D1D503A90C52A6 /* KeyboardShortcuts */; };
 		6169BE7F670FD4016F71E75E /* DownloadProgress.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B6C281B5D99F1429D1E21EE /* DownloadProgress.swift */; };
+		63267E07D5D0E44E008A59CE /* Notices.txt in Resources */ = {isa = PBXBuildFile; fileRef = AEAB0A752D630299DE3A121E /* Notices.txt */; };
 		6417AAB438CC07F24D6A0795 /* ModelStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E67186EB6F235C8F0EDE032 /* ModelStore.swift */; };
 		72A7BB35B752AB4EF8702BF9 /* Permissions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8AAFD9360C202E4A4C89777C /* Permissions.swift */; };
 		7A593E88C8F2D5ACCCCB3CCE /* PromptEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01F28AE3DFDC2EB76C6BA454 /* PromptEditor.swift */; };
+		7EB450954B34AE09C8685CFB /* WelcomeWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0B3A9C09F73443414D6FC81 /* WelcomeWindow.swift */; };
 		9056DD27EAA6A3EB75AA83A3 /* MLXLMCommon in Frameworks */ = {isa = PBXBuildFile; productRef = D4EC59C7774AAF44CE3F39DB /* MLXLMCommon */; };
 		AC4CD040E160228918AAAB7A /* Transcriber.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52D5EEF7B6E61AA8C98539A3 /* Transcriber.swift */; };
 		B479CBF44EF09BBC8E3CD085 /* VoxPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = BED5B7D07BE84224C00E7BD9 /* VoxPreferences.swift */; };
@@ -41,6 +44,7 @@
 		36749971E2BB1FA7E92FC311 /* InferencePipeline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InferencePipeline.swift; sourceTree = "<group>"; };
 		3B6C281B5D99F1429D1E21EE /* DownloadProgress.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadProgress.swift; sourceTree = "<group>"; };
 		4215C995F7C0A4966E9A37BD /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		49DEC543821E18688705EEF5 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		52D5EEF7B6E61AA8C98539A3 /* Transcriber.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Transcriber.swift; sourceTree = "<group>"; };
 		5CB294FB3262D8388A771A58 /* ContextGrabber.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContextGrabber.swift; sourceTree = "<group>"; };
 		637523F74614CF40CA02429F /* ModelDownloader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelDownloader.swift; sourceTree = "<group>"; };
@@ -50,6 +54,8 @@
 		A83000BDB7ECE1BC3AEDFFE6 /* LLMEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LLMEngine.swift; sourceTree = "<group>"; };
 		A92FC8745AB84A50F2A53935 /* PromptBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptBuilder.swift; sourceTree = "<group>"; };
 		A9B07E51CDF948F3FDE22A7A /* VoxApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoxApp.swift; sourceTree = "<group>"; };
+		AEAB0A752D630299DE3A121E /* Notices.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = Notices.txt; sourceTree = "<group>"; };
+		B0B3A9C09F73443414D6FC81 /* WelcomeWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeWindow.swift; sourceTree = "<group>"; };
 		BED5B7D07BE84224C00E7BD9 /* VoxPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoxPreferences.swift; sourceTree = "<group>"; };
 		C332CE35E14DA9EBC4A77E20 /* VoxError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoxError.swift; sourceTree = "<group>"; };
 		D2CCA3BF023059116C2E2EEC /* SetupWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetupWindow.swift; sourceTree = "<group>"; };
@@ -90,6 +96,7 @@
 		0642E177D923120038310D93 /* Vox */ = {
 			isa = PBXGroup;
 			children = (
+				49DEC543821E18688705EEF5 /* Assets.xcassets */,
 				4215C995F7C0A4966E9A37BD /* Info.plist */,
 				E2305D0DB587EE5ECAFB1ED9 /* Vox.entitlements */,
 				13EEF9EB31BB86740F3FF764 /* App */,
@@ -97,6 +104,7 @@
 				92B34F60AF0F9A2E74EC6E61 /* Input */,
 				1984FC5C9C31430D937750FB /* Output */,
 				CBA092417BD2E4AFA40BF356 /* Pipeline */,
+				1511DF3D246D34A20D0DEA0D /* Resources */,
 				8960B2AE757FC9E2A4507F2A /* Util */,
 			);
 			path = Vox;
@@ -110,8 +118,17 @@
 				01F28AE3DFDC2EB76C6BA454 /* PromptEditor.swift */,
 				A9B07E51CDF948F3FDE22A7A /* VoxApp.swift */,
 				BED5B7D07BE84224C00E7BD9 /* VoxPreferences.swift */,
+				B0B3A9C09F73443414D6FC81 /* WelcomeWindow.swift */,
 			);
 			path = App;
+			sourceTree = "<group>";
+		};
+		1511DF3D246D34A20D0DEA0D /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				AEAB0A752D630299DE3A121E /* Notices.txt */,
+			);
+			path = Resources;
 			sourceTree = "<group>";
 		};
 		1984FC5C9C31430D937750FB /* Output */ = {
@@ -178,6 +195,7 @@
 			buildConfigurationList = 94BF0D33A59CDA1423730572 /* Build configuration list for PBXNativeTarget "Vox" */;
 			buildPhases = (
 				1BF3D41140825CBD5F480100 /* Sources */,
+				2B74DBD96F063AE9BCC1C02A /* Resources */,
 				5F6A176A75805AF9AC0C3AD1 /* Frameworks */,
 			);
 			buildRules = (
@@ -230,6 +248,18 @@
 		};
 /* End PBXProject section */
 
+/* Begin PBXResourcesBuildPhase section */
+		2B74DBD96F063AE9BCC1C02A /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				14A215ECD5B3E7A517932C26 /* Assets.xcassets in Resources */,
+				63267E07D5D0E44E008A59CE /* Notices.txt in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
 		1BF3D41140825CBD5F480100 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
@@ -256,6 +286,7 @@
 				5B8057F6D8C5EF2692823EF8 /* VoxApp.swift in Sources */,
 				1855B4A4068E187FE7907CD4 /* VoxError.swift in Sources */,
 				B479CBF44EF09BBC8E3CD085 /* VoxPreferences.swift in Sources */,
+				7EB450954B34AE09C8685CFB /* WelcomeWindow.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -302,6 +333,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = arm64;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
@@ -355,7 +387,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
-				ONLY_ACTIVE_ARCH = YES;
+				ONLY_ACTIVE_ARCH = NO;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
@@ -368,6 +400,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = arm64;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
@@ -415,6 +448,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = NO;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
 				SWIFT_COMPILATION_MODE = wholemodule;

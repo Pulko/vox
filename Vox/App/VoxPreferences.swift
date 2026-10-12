@@ -98,6 +98,12 @@ enum VoxPreferences {
     private static let startSoundKey = "startSoundName"
     private static let doneSoundKey = "doneSoundName"
     private static let systemPromptKey = "systemPrompt"
+    private static let didShowWelcomeKey = "didShowWelcome"
+
+    static var didShowWelcome: Bool {
+        get { UserDefaults.standard.bool(forKey: didShowWelcomeKey) }
+        set { UserDefaults.standard.set(newValue, forKey: didShowWelcomeKey) }
+    }
 
     static var selectedLLM: LLMOption? {
         get { storedOption(key: llmKey, lookup: LLMCatalog.writer) }

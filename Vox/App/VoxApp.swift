@@ -41,6 +41,7 @@ final class AppCoordinator: NSObject, NSMenuDelegate, ModelsHosting {
     private var isSwitchingModel = false
     private var downloadTarget: LLMOption?
     private let promptEditor = PromptEditorController()
+    private let welcome = WelcomeWindowController()
     private lazy var modelsWindow = ModelsWindowController(host: self)
 
     func start() {
@@ -49,6 +50,9 @@ final class AppCoordinator: NSObject, NSMenuDelegate, ModelsHosting {
     }
 
     private func bootstrap() async {
+        if !VoxPreferences.didShowWelcome {
+            await welcome.present()
+        }
         setStatus("Checking permissions…")
         await Permissions.requestAll()
         if !Permissions.isAccessibilityTrusted {
@@ -364,6 +368,13 @@ final class AppCoordinator: NSObject, NSMenuDelegate, ModelsHosting {
         )
         accessibilityPromptItem.target = self
         menu.addItem(accessibilityPromptItem)
+        let noticesItem = NSMenuItem(
+            title: "Third-Party Notices…",
+            action: #selector(openNotices),
+            keyEquivalent: ""
+        )
+        noticesItem.target = self
+        menu.addItem(noticesItem)
         menu.addItem(.separator())
         let quitItem = NSMenuItem(title: "Quit Vox", action: #selector(quit), keyEquivalent: "q")
         quitItem.target = self
@@ -498,6 +509,17 @@ final class AppCoordinator: NSObject, NSMenuDelegate, ModelsHosting {
         _ = Permissions.requestAccessibilityPrompt()
         Permissions.openAccessibilitySettings()
         setStatus("Toggle Vox off/on in Accessibility")
+    }
+
+    @objc private func openNotices() {
+        let bundle = Bundle.main
+        let url = bundle.url(forResource: "Notices", withExtension: "txt")
+            ?? bundle.url(forResource: "Notices", withExtension: "txt", subdirectory: "Resources")
+        guard let url else {
+            setStatus("Notices file is missing")
+            return
+        }
+        NSWorkspace.shared.open(url)
     }
 
     @objc private func quit() {

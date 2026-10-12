@@ -16,7 +16,7 @@ final class SetupWindowController: NSObject {
         let window = NSWindow(contentViewController: hosting)
         window.title = "Vox Setup"
         window.styleMask = [.titled, .closable]
-        window.setContentSize(NSSize(width: 420, height: 160))
+        window.setContentSize(NSSize(width: 420, height: 200))
         window.center()
         window.isReleasedWhenClosed = false
         window.level = .floating
@@ -39,6 +39,10 @@ private struct SetupView: View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Downloading on-device models")
                 .font(.headline)
+            Text("Weights download from Hugging Face under that model’s license, then stay on this Mac.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
             Text(model.status)
                 .font(.callout)
                 .foregroundStyle(.secondary)

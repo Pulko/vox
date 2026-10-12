@@ -1,0 +1,26 @@
+Vox
+Copyright (c) 2026 Fedor Tkachenko
+Licensed under the MIT License. See LICENSE in the source repository.
+
+This application includes software from:
+
+mlx-swift-examples (MLXLLM, MLXLMCommon)
+https://github.com/ml-explore/mlx-swift-examples
+Copyright (c) 2024 Apple Inc.
+Licensed under the MIT License.
+
+WhisperKit
+https://github.com/argmaxinc/WhisperKit
+Copyright (c) 2024 Argmax, Inc.
+Licensed under the MIT License.
+
+KeyboardShortcuts
+https://github.com/sindresorhus/KeyboardShortcuts
+Copyright (c) Sindre Sorhus <sindresorhus@gmail.com> (https://sindresorhus.com)
+Licensed under the MIT License.
+
+Model weights are not bundled with this application. When you choose Use in
+Models, Vox downloads weights from Hugging Face (mlx-community and
+argmaxinc/whisperkit-coreml) into ~/Library/Application Support/Vox/models/.
+Those files remain under their own licenses (Llama, Qwen, Gemma, Phi, and
+Whisper). Review the license on each Hugging Face repository before download.

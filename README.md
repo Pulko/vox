@@ -4,6 +4,18 @@ A menu-bar macOS agent: hold **Option-Space**, speak what to do with the **highl
 
 Everything after you choose a model runs on-device.
 
+## Install
+
+1. Use **macOS 14 or later** on **Apple Silicon**.
+2. Download `Vox.zip` from [Releases](https://github.com/Pulko/vox/releases).
+3. Unzip and move `Vox.app` to Applications.
+4. Open Vox. It lives in the menu bar (no Dock icon). Allow **Microphone** and **Accessibility** when asked.
+5. Open **Models…** and press **Use** on a text writer. Weights download from Hugging Face under that model’s license, then stay on this Mac. Whisper (~200 MB) downloads with the first model you Use.
+
+If the zip is not notarized, right-click Vox.app and choose **Open**. Ad-hoc rebuilds are a new identity: toggle Vox off/on in Accessibility if auto-paste stops.
+
+Quit from the menu extra, or `killall Vox`.
+
 ## How it works
 
 Vox is a background extra (`LSUIElement`). It does not appear in the Dock or Cmd-Tab.
@@ -23,13 +35,11 @@ Vox is a background extra (`LSUIElement`). It does not appear in the Dock or Cmd
   **Use** downloads if needed. **Remove** deletes that folder. Nothing auto-downloads. A parser that is not installed is ignored; speech still goes through NaturalLanguage into the writer.
 - **Sounds** — Start and Done each have Mute plus system sounds. The icon is slashed only when both are muted.
 - **Edit System Prompt…** — override the writer system prompt.
-- Accessibility helpers and Quit.
+- **Third-Party Notices…**, Accessibility helpers, and Quit.
 
-Weights live in `~/Library/Application Support/Vox/models/` (`llm/<folder>/` and `openai_whisper-base`). Whisper (~200 MB) downloads with the first model you Use. Grant **Microphone** and **Accessibility** when asked. Ad-hoc rebuilds are a new identity: toggle Vox off/on in Accessibility if auto-paste stops.
+Weights live in `~/Library/Application Support/Vox/models/` (`llm/<folder>/` and `openai_whisper-base`).
 
-Quit from the menu extra, or `killall Vox`.
-
-## Requirements
+## Requirements (from source)
 
 - macOS 14+, Apple Silicon
 - Xcode 15+ (MLX Metal shaders must be compiled by Xcode)
@@ -39,7 +49,15 @@ Quit from the menu extra, or `killall Vox`.
 
 ```sh
 xcodegen generate
-xcodebuild -scheme Vox -configuration Release -destination 'platform=macOS' build
+xcodebuild -scheme Vox -configuration Release -destination 'generic/platform=macOS' ARCHS=arm64 build
 ```
 
 Or open `Vox.xcodeproj` in Xcode and run.
+
+To zip a GitHub Release asset on this Mac:
+
+```sh
+./scripts/release.sh
+```
+
+Set `DEVELOPER_ID` (and a `notarytool` keychain profile, default `VoxNotary`) to sign and notarize. If `gh` is logged in, the script publishes `Vox.zip` as tag `v` plus the version in `project.yml`. Use `SKIP_GH_RELEASE=1` to zip only.
