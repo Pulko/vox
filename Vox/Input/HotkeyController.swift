@@ -1,0 +1,57 @@
+import Foundation
+import KeyboardShortcuts
+
+extension KeyboardShortcuts.Name {
+    static let pushToTalk = Self("pushToTalk", default: .init(.space, modifiers: [.option]))
+}
+
+@MainActor
+final class HotkeyController {
+    private let pipeline: InferencePipeline
+    private let recorder = AudioRecorder()
+    private var contextText = ""
+    private var isRecording = false
+    private var isBusy = false
+
+    init(pipeline: InferencePipeline) {
+        self.pipeline = pipeline
+        KeyboardShortcuts.onKeyDown(for: .pushToTalk) { [weak self] in
+            self?.handleKeyDown()
+        }
+        KeyboardShortcuts.onKeyUp(for: .pushToTalk) { [weak self] in
+            self?.handleKeyUp()
+        }
+        Log.input.info("Registered Option-Space push-to-talk")
+    }
+
+    private func handleKeyDown() {
+        guard !isBusy, !isRecording else { return }
+        contextText = ContextGrabber.grabSelectedText()
+        do {
+            try recorder.start()
+            isRecording = true
+            Feedback.recordingStarted()
+            Log.input.info("Recording started; context length \(self.contextText.count)")
+        } catch {
+            Log.input.error("Recorder failed: \(error.localizedDescription, privacy: .public)")
+        }
+    }
+
+    private func handleKeyUp() {
+        guard isRecording else { return }
+        isRecording = false
+        let samples = recorder.stop()
+        isBusy = true
+        let context = contextText
+        Task {
+            defer { isBusy = false }
+            do {
+                let output = try await pipeline.run(samples: samples, context: context)
+                Paster.paste(output)
+                Feedback.finished()
+            } catch {
+                Log.pipeline.error("Run failed: \(error.localizedDescription, privacy: .public)")
+            }
+        }
+    }
+}
