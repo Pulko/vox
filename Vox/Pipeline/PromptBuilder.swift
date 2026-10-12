@@ -35,10 +35,25 @@ enum PromptBuilder {
     No preamble, no closing notes, no markdown fences, no wrapping quotes around the whole result.
     """
 
-    static func userMessage(context: String, instruction: String) -> String {
+    static let parserSystemPrompt = """
+    You extract structure from a spoken command. Output JSON only, no markdown, no extra keys:
+    {"task":"reply|edit|create|other","register":"email|chat|other","polarity":"accept|decline|neutral","must_include":["..."]}
+    Copy names, numbers, dates, times, and quoted phrases into must_include exactly. Invent nothing.
+    """
+
+    static func parserUserMessage(_ instruction: String) -> String {
+        """
+        Spoken command:
+        \(instruction)
+
+        JSON:
+        """
+    }
+
+    static func userMessage(context: String, instruction: String, parsed: String? = nil) -> String {
         let trimmedContext = context.trimmingCharacters(in: .whitespacesAndNewlines)
         let selectedText = trimmedContext.isEmpty ? "(none)" : trimmedContext
-        return """
+        var message = """
         <SELECTED_TEXT>
         \(selectedText)
         </SELECTED_TEXT>
@@ -46,9 +61,41 @@ enum PromptBuilder {
         <SPOKEN_REQUEST>
         \(instruction)
         </SPOKEN_REQUEST>
-
-        Execute every clause. Match the requested form and length (a full email if asked, not a one-liner). State only what the inputs license. Close <FINAL>.
         """
+        if let parsed, !parsed.isEmpty {
+            message += """
+
+
+            <PARSED>
+            \(parsed)
+            </PARSED>
+            """
+        }
+        message += """
+
+        Execute every clause. Prefer SPOKEN_REQUEST if PARSED conflicts. Match the requested form and length (a full email if asked, not a one-liner). State only what the inputs license. Close <FINAL>.
+        """
+        return message
+    }
+
+    static func extractJSONObject(from raw: String) -> String? {
+        var text = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        for token in ["<|eot_id|>", "<|end_of_text|>", "<|begin_of_text|>", "<|im_end|>"] {
+            text = text.replacingOccurrences(of: token, with: "")
+        }
+        guard let start = text.firstIndex(of: "{"),
+              let end = text.lastIndex(of: "}"),
+              start < end
+        else {
+            return nil
+        }
+        let slice = String(text[start...end])
+        guard let data = slice.data(using: .utf8),
+              (try? JSONSerialization.jsonObject(with: data)) is [String: Any]
+        else {
+            return nil
+        }
+        return slice
     }
 
     static func sanitize(_ output: String) -> String {

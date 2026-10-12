@@ -17,6 +17,10 @@ struct ModelStore {
         VoxPreferences.selectedLLM.map { directory(for: $0) }
     }
 
+    var parserDirectory: URL? {
+        VoxPreferences.selectedParser.map { directory(for: $0) }
+    }
+
     func directory(for option: LLMOption) -> URL {
         root.appendingPathComponent("llm/\(option.folder)", isDirectory: true)
     }
@@ -39,6 +43,14 @@ struct ModelStore {
 
     var installedLLMs: [LLMOption] {
         LLMCatalog.all.filter { isReady($0) }
+    }
+
+    var installedWriters: [LLMOption] {
+        LLMCatalog.writers.filter { isReady($0) }
+    }
+
+    var installedParsers: [LLMOption] {
+        LLMCatalog.parsers.filter { isReady($0) }
     }
 
     func remove(_ option: LLMOption) throws {

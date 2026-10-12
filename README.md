@@ -10,23 +10,22 @@ Vox is a background extra (`LSUIElement`). It does not appear in the Dock or Cmd
 
 1. **Key down.** It reads the current Accessibility selection (`AXSelectedText`) and starts the microphone. If nothing is highlighted, context is empty — it never copies the clipboard.
 2. **Key up.** Recording stops. WhisperKit (whisper-base) transcribes on the Neural Engine.
-3. **Generate.** The selected MLX instruct model treats the transcript as a command and the selection as source data. It may reply, rewrite, reformat, or compose. Output is finished text only.
-4. **Deliver.** The result is written to the clipboard. If this binary is trusted for Accessibility, Vox also posts Cmd-V. If auto-paste misses (webviews, untrusted Accessibility), paste from the clipboard yourself.
+3. **Clean.** `NaturalLanguage` (`NLTagger` lexical class) drops interjections and consecutive duplicate words. No filler-word list.
+4. **Parse (optional).** If an instruction parser is installed **and** in use, a small MLX model turns the cleaned speech into JSON. If the parser is missing, failed, or returns junk, this step is skipped.
+5. **Write.** The text-writer model turns the selection plus cleaned speech (and parse JSON when present) into paste-ready text.
+6. **Deliver.** Clipboard, plus Cmd-V when Accessibility allows.
 
 ## Menu bar
 
-- **Language model** — **None** (default; nothing downloads) or a curated 4-bit MLX model with size:
-  - Llama 3.2 3B — 1.8 GB
-  - Llama 3.2 1B — 0.7 GB
-  - Qwen 2.5 3B — 1.8 GB
-  - Qwen 2.5 1.5B — 0.9 GB
-  - Phi 3.5 Mini — 2.2 GB  
-  A checkmark means installed and loaded. Uninstalled rows say `not installed`. **Remove from This Mac** deletes that LLM folder only (not Whisper).
-- **Sounds** — mute (slash on the icon) or pick start/done system sounds.
-- **Edit System Prompt…** — override the compiled-in prompt; Save applies on the next run; Reset restores the default.
+- **Models…** — two lists:
+  - **Text writer:** Llama 3.2 3B (1.8 GB), Qwen 2.5 3B (1.8 GB), Phi 3.5 Mini (2.2 GB), or None.
+  - **Instruction parser (optional):** Qwen3 0.6B (0.4 GB), Gemma 3 1B (0.8 GB), Llama 3.2 1B (0.7 GB), Qwen3 1.7B (1.0 GB), or None.  
+  **Use** downloads if needed. **Remove** deletes that folder. Nothing auto-downloads. A parser that is not installed is ignored; speech still goes through NaturalLanguage into the writer.
+- **Sounds** — Start and Done each have Mute plus system sounds. The icon is slashed only when both are muted.
+- **Edit System Prompt…** — override the writer system prompt.
 - Accessibility helpers and Quit.
 
-Weights live in `~/Library/Application Support/Vox/models/` (`llm/<folder>/` and `openai_whisper-base`). Whisper (~200 MB) downloads with the first LLM you select. Grant **Microphone** and **Accessibility** when asked. Ad-hoc rebuilds are a new identity: toggle Vox off/on in Accessibility if auto-paste stops.
+Weights live in `~/Library/Application Support/Vox/models/` (`llm/<folder>/` and `openai_whisper-base`). Whisper (~200 MB) downloads with the first model you Use. Grant **Microphone** and **Accessibility** when asked. Ad-hoc rebuilds are a new identity: toggle Vox off/on in Accessibility if auto-paste stops.
 
 Quit from the menu extra, or `killall Vox`.
 

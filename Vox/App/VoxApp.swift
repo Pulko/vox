@@ -26,18 +26,22 @@ final class VoxApp: NSObject, NSApplicationDelegate {
 }
 
 @MainActor
-final class AppCoordinator: NSObject, NSMenuDelegate {
-    private let store = ModelStore()
+final class AppCoordinator: NSObject, NSMenuDelegate, ModelsHosting {
+    let store = ModelStore()
+    let modelsState = ModelsState()
     private var setup: SetupWindowController?
     private var transcriber: Transcriber?
     private var llm: LLMEngine?
+    private var parserEngine: LLMEngine?
+    private var pipeline: InferencePipeline?
     private var hotkey: HotkeyController?
     private var statusItem: NSStatusItem?
     private var statusLabel: NSMenuItem?
-    private var muteItem: NSMenuItem?
-    private var removeLLMMenu: NSMenu?
+    private var soundsMenu: NSMenu?
     private var isSwitchingModel = false
+    private var downloadTarget: LLMOption?
     private let promptEditor = PromptEditorController()
+    private lazy var modelsWindow = ModelsWindowController(host: self)
 
     func start() {
         installStatusItem()
@@ -54,7 +58,7 @@ final class AppCoordinator: NSObject, NSMenuDelegate {
         watchAccessibility()
 
         if let selected = VoxPreferences.selectedLLM, !store.isReady(selected) {
-            await downloadModels()
+            await downloadModels(for: selected)
         }
 
         await loadEngines()
@@ -76,15 +80,16 @@ final class AppCoordinator: NSObject, NSMenuDelegate {
         }
     }
 
-    private func downloadModels() async {
-        setStatus("Downloading models…")
+    private func downloadModels(for option: LLMOption) async {
+        downloadTarget = option
+        setStatus("Downloading \(option.title)…")
         let controller = SetupWindowController()
         setup = controller
         controller.show { [weak self] in
             Task { await self?.retryDownload() }
         }
         do {
-            try await ModelDownloader(store: store, progress: controller.model).downloadAll()
+            try await ModelDownloader(store: store, progress: controller.model).download(option)
             controller.close()
             setup = nil
         } catch {
@@ -95,16 +100,13 @@ final class AppCoordinator: NSObject, NSMenuDelegate {
     }
 
     private func retryDownload() async {
+        guard let option = downloadTarget else { return }
         setup?.model.errorMessage = nil
         do {
-            try await ModelDownloader(store: store, progress: setup!.model).downloadAll()
+            try await ModelDownloader(store: store, progress: setup!.model).download(option)
             setup?.close()
             setup = nil
-            if transcriber == nil {
-                await loadEngines()
-            } else {
-                await reloadLLM()
-            }
+            await loadEngines()
         } catch {
             setup?.model.errorMessage = error.localizedDescription
         }
@@ -119,52 +121,77 @@ final class AppCoordinator: NSObject, NSMenuDelegate {
         return transcriber
     }
 
-    private func attachLLM(using transcriber: Transcriber) async throws {
+    private func attachEngines(using transcriber: Transcriber) async throws {
         guard let directory = store.llmDirectory else {
             hotkey?.dropPipeline()
+            pipeline = nil
             llm = nil
+            parserEngine = nil
             return
         }
-        let llm = try await LLMEngine(modelDirectory: directory)
-        self.llm = llm
-        let pipeline = InferencePipeline(transcriber: transcriber, llm: llm)
-        if let hotkey {
-            hotkey.replacePipeline(pipeline)
+        let writer = try await LLMEngine(modelDirectory: directory)
+        llm = writer
+        parserEngine = await loadParserIfReady()
+        if let pipeline {
+            pipeline.replace(llm: writer, parser: parserEngine)
         } else {
-            hotkey = HotkeyController(pipeline: pipeline) { [weak self] text in
-                self?.setStatus(text)
+            let pipeline = InferencePipeline(transcriber: transcriber, llm: writer, parser: parserEngine)
+            self.pipeline = pipeline
+            if let hotkey {
+                hotkey.replacePipeline(pipeline)
+            } else {
+                hotkey = HotkeyController(pipeline: pipeline) { [weak self] text in
+                    self?.setStatus(text)
+                }
             }
         }
     }
 
-    private func reloadLLM() async {
+    private func loadParserIfReady() async -> LLMEngine? {
+        guard let option = VoxPreferences.selectedParser, store.isReady(option) else {
+            return nil
+        }
+        guard let directory = store.parserDirectory else { return nil }
+        do {
+            let engine = try await LLMEngine(modelDirectory: directory)
+            Log.pipeline.info("Parser loaded: \(option.title, privacy: .public)")
+            return engine
+        } catch {
+            Log.pipeline.error("Parser load skipped: \(error.localizedDescription, privacy: .public)")
+            return nil
+        }
+    }
+
+    private func readyStatus() -> String {
+        let writer = llm == nil ? "None" : (VoxPreferences.selectedLLM?.title ?? "None")
+        let parser = parserEngine == nil ? "None" : (VoxPreferences.selectedParser?.title ?? "None")
+        return "Writer: \(writer) · Parser: \(parser)"
+    }
+
+    private func refreshModelsUI() {
+        modelsState.writerInUseID = llm == nil ? nil : VoxPreferences.selectedLLM?.id
+        modelsState.parserInUseID = parserEngine == nil ? nil : VoxPreferences.selectedParser?.id
+        modelsState.ping()
+    }
+
+    private func reloadWriter() async {
         guard let selected = VoxPreferences.selectedLLM else {
-            await selectNone()
+            await useWriter(nil)
             return
         }
         setStatus("Loading \(selected.title)…")
         do {
             let transcriber = try await loadedTranscriber()
-            try await attachLLM(using: transcriber)
-            setStatus("Ready — \(selected.title)")
+            try await attachEngines(using: transcriber)
+            setStatus(readyStatus())
         } catch {
-            Log.app.error("LLM reload failed: \(error.localizedDescription, privacy: .public)")
+            Log.app.error("Writer reload failed: \(error.localizedDescription, privacy: .public)")
             setStatus("Failed to load \(selected.title)")
         }
+        refreshModelsUI()
     }
 
-    private func selectNone() async {
-        if hotkey?.isOccupied == true {
-            setStatus("Wait — Vox is busy")
-            return
-        }
-        VoxPreferences.selectedLLM = nil
-        hotkey?.dropPipeline()
-        llm = nil
-        setStatus("No language model")
-    }
-
-    private func switchToLLM(_ option: LLMOption) async {
+    func useWriter(_ option: LLMOption?) async {
         guard !isSwitchingModel else { return }
         if hotkey?.isOccupied == true {
             setStatus("Wait — Vox is busy")
@@ -172,12 +199,102 @@ final class AppCoordinator: NSObject, NSMenuDelegate {
         }
         isSwitchingModel = true
         defer { isSwitchingModel = false }
+        guard let option else {
+            VoxPreferences.selectedLLM = nil
+            hotkey?.dropPipeline()
+            pipeline = nil
+            llm = nil
+            setStatus(readyStatus())
+            refreshModelsUI()
+            return
+        }
         VoxPreferences.selectedLLM = option
         if !store.isReady(option) {
-            await downloadModels()
+            await downloadModels(for: option)
             guard store.isReady(option) else { return }
         }
-        await reloadLLM()
+        await reloadWriter()
+    }
+
+    func useParser(_ option: LLMOption?) async {
+        guard !isSwitchingModel else { return }
+        if hotkey?.isOccupied == true {
+            setStatus("Wait — Vox is busy")
+            return
+        }
+        isSwitchingModel = true
+        defer { isSwitchingModel = false }
+        guard let option else {
+            VoxPreferences.selectedParser = nil
+            parserEngine = nil
+            if let llm {
+                pipeline?.replace(llm: llm, parser: nil)
+            }
+            setStatus(readyStatus())
+            refreshModelsUI()
+            return
+        }
+        VoxPreferences.selectedParser = option
+        if !store.isReady(option) {
+            await downloadModels(for: option)
+            guard store.isReady(option) else {
+                parserEngine = nil
+                refreshModelsUI()
+                return
+            }
+        }
+        parserEngine = await loadParserIfReady()
+        if let llm {
+            pipeline?.replace(llm: llm, parser: parserEngine)
+        }
+        setStatus(readyStatus())
+        refreshModelsUI()
+    }
+
+    func removeModel(_ option: LLMOption) async {
+        if hotkey?.isOccupied == true {
+            setStatus("Wait — Vox is busy")
+            return
+        }
+        let alert = NSAlert()
+        alert.messageText = "Remove \(option.title)?"
+        alert.informativeText = "This deletes the downloaded weights from this Mac."
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: "Remove")
+        alert.addButton(withTitle: "Cancel")
+        guard alert.runModal() == .alertFirstButtonReturn else { return }
+
+        let removingWriter = option.id == VoxPreferences.selectedLLM?.id
+        let removingParser = option.id == VoxPreferences.selectedParser?.id
+        if removingWriter {
+            hotkey?.dropPipeline()
+            pipeline = nil
+            llm = nil
+        }
+        if removingParser {
+            parserEngine = nil
+        }
+        do {
+            try store.remove(option)
+        } catch {
+            setStatus("Could not remove \(option.title)")
+            await loadEngines()
+            return
+        }
+        if removingWriter {
+            VoxPreferences.selectedLLM = nil
+        }
+        if removingParser {
+            VoxPreferences.selectedParser = nil
+        }
+        if llm != nil, let writer = llm {
+            pipeline?.replace(llm: writer, parser: parserEngine)
+        }
+        setStatus("Removed \(option.title)")
+        refreshModelsUI()
+        if VoxPreferences.selectedLLM != nil, llm == nil {
+            await loadEngines()
+        }
     }
 
     private func loadEngines() async {
@@ -188,13 +305,15 @@ final class AppCoordinator: NSObject, NSMenuDelegate {
             }
             if let selected = VoxPreferences.selectedLLM, store.isReady(selected) {
                 let transcriber = try await loadedTranscriber()
-                try await attachLLM(using: transcriber)
-                setStatus("Ready — \(selected.title)")
+                try await attachEngines(using: transcriber)
+                setStatus(readyStatus())
                 Log.app.info("Vox is ready")
             } else {
                 hotkey?.dropPipeline()
+                pipeline = nil
                 llm = nil
-                setStatus("No language model — pick one to download")
+                parserEngine = await loadParserIfReady()
+                setStatus(readyStatus())
             }
         } catch {
             Log.app.error("Engine load failed: \(error.localizedDescription, privacy: .public)")
@@ -204,6 +323,7 @@ final class AppCoordinator: NSObject, NSMenuDelegate {
             alert.informativeText = error.localizedDescription
             alert.runModal()
         }
+        refreshModelsUI()
     }
 
     private func installStatusItem() {
@@ -218,7 +338,9 @@ final class AppCoordinator: NSObject, NSMenuDelegate {
         status.isEnabled = false
         menu.addItem(status)
         menu.addItem(.separator())
-        menu.addItem(makeLLMMenu())
+        let modelsItem = NSMenuItem(title: "Models…", action: #selector(openModels), keyEquivalent: "")
+        modelsItem.target = self
+        menu.addItem(modelsItem)
         menu.addItem(makeSoundsMenu())
         let promptItem = NSMenuItem(
             title: "Edit System Prompt…",
@@ -254,99 +376,26 @@ final class AppCoordinator: NSObject, NSMenuDelegate {
 
     func menuNeedsUpdate(_ menu: NSMenu) {
         refreshSoundMenuState()
-        refreshLLMMenuState()
-        refreshRemoveLLMMenu()
-    }
-
-    private func makeLLMMenu() -> NSMenuItem {
-        let item = NSMenuItem(title: "Language model", action: nil, keyEquivalent: "")
-        let submenu = NSMenu()
-        let none = NSMenuItem(title: "None", action: #selector(chooseLLM(_:)), keyEquivalent: "")
-        none.target = self
-        none.representedObject = LLMCatalog.noneID
-        submenu.addItem(none)
-        submenu.addItem(.separator())
-        for option in LLMCatalog.all {
-            let entry = NSMenuItem(title: option.menuTitle, action: #selector(chooseLLM(_:)), keyEquivalent: "")
-            entry.target = self
-            entry.representedObject = option.id
-            submenu.addItem(entry)
-        }
-        submenu.addItem(.separator())
-        let remove = NSMenuItem(title: "Remove from This Mac", action: nil, keyEquivalent: "")
-        let removeMenu = NSMenu()
-        remove.submenu = removeMenu
-        submenu.addItem(remove)
-        item.submenu = submenu
-        removeLLMMenu = removeMenu
-        refreshLLMMenuState()
-        refreshRemoveLLMMenu()
-        return item
-    }
-
-    private var loadedLLM: LLMOption? {
-        guard let selected = VoxPreferences.selectedLLM, store.isReady(selected), llm != nil else {
-            return nil
-        }
-        return selected
-    }
-
-    private func refreshLLMMenuState() {
-        let loaded = loadedLLM
-        guard let llmMenu = statusItem?.menu?.items.first(where: { $0.title == "Language model" })?.submenu else {
-            return
-        }
-        for item in llmMenu.items {
-            guard let id = item.representedObject as? String else { continue }
-            if id == LLMCatalog.noneID {
-                item.state = loaded == nil ? .on : .off
-                continue
-            }
-            guard let option = LLMCatalog.option(id: id) else { continue }
-            item.title = store.isReady(option) ? option.menuTitle : "\(option.menuTitle), not installed"
-            item.state = loaded?.id == option.id ? .on : .off
-        }
-    }
-
-    private func refreshRemoveLLMMenu() {
-        guard let removeLLMMenu else { return }
-        removeLLMMenu.removeAllItems()
-        let installed = store.installedLLMs
-        if installed.isEmpty {
-            let empty = NSMenuItem(title: "None installed", action: nil, keyEquivalent: "")
-            empty.isEnabled = false
-            removeLLMMenu.addItem(empty)
-            return
-        }
-        for option in installed {
-            let title = option.id == loadedLLM?.id
-                ? "\(option.menuTitle) (active)"
-                : option.menuTitle
-            let entry = NSMenuItem(title: title, action: #selector(removeLLM(_:)), keyEquivalent: "")
-            entry.target = self
-            entry.representedObject = option.id
-            removeLLMMenu.addItem(entry)
-        }
     }
 
     private func makeSoundsMenu() -> NSMenuItem {
         let item = NSMenuItem(title: "Sounds", action: nil, keyEquivalent: "")
         let submenu = NSMenu()
-        let mute = NSMenuItem(title: "Mute", action: #selector(toggleMute), keyEquivalent: "")
-        mute.target = self
-        mute.state = VoxPreferences.soundsMuted ? .on : .off
-        submenu.addItem(mute)
-        muteItem = mute
-        submenu.addItem(.separator())
         submenu.addItem(soundPicker(title: "Start", names: SoundCatalog.startOptions, action: #selector(chooseStartSound(_:))))
         submenu.addItem(soundPicker(title: "Done", names: SoundCatalog.doneOptions, action: #selector(chooseDoneSound(_:))))
         item.submenu = submenu
+        soundsMenu = submenu
         return item
     }
 
     private func soundPicker(title: String, names: [String], action: Selector) -> NSMenuItem {
         let item = NSMenuItem(title: title, action: nil, keyEquivalent: "")
         let submenu = NSMenu()
+        let mute = NSMenuItem(title: "Mute", action: action, keyEquivalent: "")
+        mute.target = self
+        mute.representedObject = SoundCatalog.muteID
+        submenu.addItem(mute)
+        submenu.addItem(.separator())
         for name in names {
             let entry = NSMenuItem(title: name, action: action, keyEquivalent: "")
             entry.target = self
@@ -358,8 +407,7 @@ final class AppCoordinator: NSObject, NSMenuDelegate {
     }
 
     private func refreshSoundMenuState() {
-        muteItem?.state = VoxPreferences.soundsMuted ? .on : .off
-        guard let sounds = muteItem?.menu else { return }
+        guard let sounds = soundsMenu else { return }
         for item in sounds.items {
             guard let submenu = item.submenu else { continue }
             let selected = item.title == "Start" ? VoxPreferences.startSoundName : VoxPreferences.doneSoundName
@@ -371,10 +419,11 @@ final class AppCoordinator: NSObject, NSMenuDelegate {
 
     private func setStatus(_ text: String) {
         statusLabel?.title = text
+        modelsState.note = text
     }
 
     private func refreshStatusIcon() {
-        let muted = VoxPreferences.soundsMuted
+        let muted = VoxPreferences.allSoundsMuted
         statusItem?.button?.image = Self.makeMenuBarIcon(muted: muted)
         statusItem?.button?.toolTip = muted ? "Vox — muted" : "Vox"
     }
@@ -416,84 +465,25 @@ final class AppCoordinator: NSObject, NSMenuDelegate {
         return image
     }
 
-    @objc private func chooseLLM(_ sender: NSMenuItem) {
-        guard let id = sender.representedObject as? String else { return }
-        if id == LLMCatalog.noneID {
-            Task { await selectNone() }
-            return
-        }
-        guard let option = LLMCatalog.option(id: id) else { return }
-        if option.id == loadedLLM?.id { return }
-        Task { await switchToLLM(option) }
-    }
-
-    @objc private func removeLLM(_ sender: NSMenuItem) {
-        guard let id = sender.representedObject as? String,
-              let option = LLMCatalog.option(id: id) else { return }
-        let alert = NSAlert()
-        alert.messageText = "Remove \(option.title)?"
-        alert.informativeText = "This deletes the downloaded weights from this Mac. You can install them again from Language model."
-        alert.alertStyle = .warning
-        alert.addButton(withTitle: "Remove")
-        alert.addButton(withTitle: "Cancel")
-        guard alert.runModal() == .alertFirstButtonReturn else { return }
-        Task { await deleteLLM(option) }
-    }
-
-    private func deleteLLM(_ option: LLMOption) async {
-        if hotkey?.isOccupied == true {
-            setStatus("Wait — Vox is busy")
-            return
-        }
-        let removingActive = option.id == loadedLLM?.id || option.id == VoxPreferences.selectedLLM?.id
-        if removingActive {
-            hotkey?.dropPipeline()
-            llm = nil
-        }
-        do {
-            try store.remove(option)
-            Log.app.info("Removed LLM \(option.title, privacy: .public)")
-        } catch {
-            setStatus("Could not remove \(option.title)")
-            if removingActive {
-                await reloadLLM()
-            }
-            return
-        }
-        if removingActive {
-            if let next = store.installedLLMs.first {
-                VoxPreferences.selectedLLM = next
-                await reloadLLM()
-            } else {
-                VoxPreferences.selectedLLM = nil
-                setStatus("No language model — pick one to download")
-            }
-        } else {
-            setStatus("Removed \(option.title)")
-        }
-        refreshRemoveLLMMenu()
-    }
-
-    @objc private func toggleMute() {
-        VoxPreferences.soundsMuted.toggle()
-        refreshStatusIcon()
-        refreshSoundMenuState()
+    @objc private func openModels() {
+        modelsWindow.show()
+        refreshModelsUI()
     }
 
     @objc private func chooseStartSound(_ sender: NSMenuItem) {
         guard let name = sender.representedObject as? String else { return }
         VoxPreferences.startSoundName = name
-        VoxPreferences.soundsMuted = false
         refreshStatusIcon()
-        NSSound(named: name)?.play()
+        refreshSoundMenuState()
+        Feedback.recordingStarted()
     }
 
     @objc private func chooseDoneSound(_ sender: NSMenuItem) {
         guard let name = sender.representedObject as? String else { return }
         VoxPreferences.doneSoundName = name
-        VoxPreferences.soundsMuted = false
         refreshStatusIcon()
-        NSSound(named: name)?.play()
+        refreshSoundMenuState()
+        Feedback.finished()
     }
 
     @objc private func openPromptEditor() {

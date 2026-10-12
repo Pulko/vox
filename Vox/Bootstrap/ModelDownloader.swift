@@ -17,14 +17,36 @@ actor ModelDownloader {
     }
 
     func downloadAll() async throws {
-        if let llm = VoxPreferences.selectedLLM, !store.isReady(llm) {
+        if let llm = VoxPreferences.selectedLLM {
+            try await download(llm)
+        } else {
+            try await downloadWhisperIfNeeded()
+            await MainActor.run {
+                progress.fraction = 1
+                progress.status = "Models ready"
+                progress.isFinished = true
+            }
+        }
+    }
+
+    func download(_ option: LLMOption) async throws {
+        if !store.isReady(option) {
             try await downloadRepo(
-                llm.repo,
+                option.repo,
                 prefix: nil,
-                destination: store.directory(for: llm),
-                label: llm.title
+                destination: store.directory(for: option),
+                label: option.title
             )
         }
+        try await downloadWhisperIfNeeded()
+        await MainActor.run {
+            progress.fraction = 1
+            progress.status = "Models ready"
+            progress.isFinished = true
+        }
+    }
+
+    private func downloadWhisperIfNeeded() async throws {
         if !store.whisperReady {
             try await downloadRepo(
                 ModelStore.whisperRepo,
@@ -32,11 +54,6 @@ actor ModelDownloader {
                 destination: store.whisperDirectory,
                 label: "Whisper base"
             )
-        }
-        await MainActor.run {
-            progress.fraction = 1
-            progress.status = "Models ready"
-            progress.isFinished = true
         }
     }
 

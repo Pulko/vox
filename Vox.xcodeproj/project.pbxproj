@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		163D5344ADAB69CC3F54F8D1 /* PromptBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A92FC8745AB84A50F2A53935 /* PromptBuilder.swift */; };
 		1855B4A4068E187FE7907CD4 /* VoxError.swift in Sources */ = {isa = PBXBuildFile; fileRef = C332CE35E14DA9EBC4A77E20 /* VoxError.swift */; };
+		2B1D75C4F74BF62069744FC9 /* SpokenCleanup.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAF23706BCFA59889B480DF6 /* SpokenCleanup.swift */; };
 		40B88EA59350E7F7CCD97E58 /* Logger.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9710503EACF38C4ADA63C9C /* Logger.swift */; };
 		43A0B9B3519F8D7B83EEAD5E /* LLMEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = A83000BDB7ECE1BC3AEDFFE6 /* LLMEngine.swift */; };
 		4EED1A2751A2F0B196F55533 /* SetupWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2CCA3BF023059116C2E2EEC /* SetupWindow.swift */; };
@@ -27,6 +28,7 @@
 		BA8213BE44711356CC175A86 /* HotkeyController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 765339FA431857DD47E4304B /* HotkeyController.swift */; };
 		BDAB080CF526E04630095AF5 /* WhisperKit in Frameworks */ = {isa = PBXBuildFile; productRef = A3DFECF3FC30878DBBD5890D /* WhisperKit */; };
 		C29B8388B4428F09AFDB4538 /* Paster.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0A1E2E025B77A3468E2B69D /* Paster.swift */; };
+		C86E68C27D38077C9E9EBC1E /* ModelsWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5BDA793D268F79D8D754BC5 /* ModelsWindow.swift */; };
 		CB5BD71AF960C285F273E4E0 /* ModelDownloader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 637523F74614CF40CA02429F /* ModelDownloader.swift */; };
 		CEB11CB3A702EEC4FD8A9036 /* InferencePipeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36749971E2BB1FA7E92FC311 /* InferencePipeline.swift */; };
 		E925F29F5AFC42C9913AF0D2 /* AudioRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B02E05FC8818AE8A8B51E30 /* AudioRecorder.swift */; };
@@ -55,6 +57,8 @@
 		E0A1E2E025B77A3468E2B69D /* Paster.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Paster.swift; sourceTree = "<group>"; };
 		E2305D0DB587EE5ECAFB1ED9 /* Vox.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Vox.entitlements; sourceTree = "<group>"; };
 		E771A991A01D6AAF420A06F2 /* KeySynth.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeySynth.swift; sourceTree = "<group>"; };
+		EAF23706BCFA59889B480DF6 /* SpokenCleanup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpokenCleanup.swift; sourceTree = "<group>"; };
+		F5BDA793D268F79D8D754BC5 /* ModelsWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelsWindow.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -101,6 +105,7 @@
 		13EEF9EB31BB86740F3FF764 /* App */ = {
 			isa = PBXGroup;
 			children = (
+				F5BDA793D268F79D8D754BC5 /* ModelsWindow.swift */,
 				8AAFD9360C202E4A4C89777C /* Permissions.swift */,
 				01F28AE3DFDC2EB76C6BA454 /* PromptEditor.swift */,
 				A9B07E51CDF948F3FDE22A7A /* VoxApp.swift */,
@@ -151,6 +156,7 @@
 				36749971E2BB1FA7E92FC311 /* InferencePipeline.swift */,
 				A83000BDB7ECE1BC3AEDFFE6 /* LLMEngine.swift */,
 				A92FC8745AB84A50F2A53935 /* PromptBuilder.swift */,
+				EAF23706BCFA59889B480DF6 /* SpokenCleanup.swift */,
 				52D5EEF7B6E61AA8C98539A3 /* Transcriber.swift */,
 			);
 			path = Pipeline;
@@ -239,11 +245,13 @@
 				40B88EA59350E7F7CCD97E58 /* Logger.swift in Sources */,
 				CB5BD71AF960C285F273E4E0 /* ModelDownloader.swift in Sources */,
 				6417AAB438CC07F24D6A0795 /* ModelStore.swift in Sources */,
+				C86E68C27D38077C9E9EBC1E /* ModelsWindow.swift in Sources */,
 				C29B8388B4428F09AFDB4538 /* Paster.swift in Sources */,
 				72A7BB35B752AB4EF8702BF9 /* Permissions.swift in Sources */,
 				163D5344ADAB69CC3F54F8D1 /* PromptBuilder.swift in Sources */,
 				7A593E88C8F2D5ACCCCB3CCE /* PromptEditor.swift in Sources */,
 				4EED1A2751A2F0B196F55533 /* SetupWindow.swift in Sources */,
+				2B1D75C4F74BF62069744FC9 /* SpokenCleanup.swift in Sources */,
 				AC4CD040E160228918AAAB7A /* Transcriber.swift in Sources */,
 				5B8057F6D8C5EF2692823EF8 /* VoxApp.swift in Sources */,
 				1855B4A4068E187FE7907CD4 /* VoxError.swift in Sources */,

@@ -35,7 +35,7 @@ enum Feedback {
     }
 
     private static func play(_ name: String) {
-        guard !VoxPreferences.soundsMuted else { return }
+        guard name != SoundCatalog.muteID else { return }
         NSSound(named: name)?.play()
     }
 }
