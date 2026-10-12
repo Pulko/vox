@@ -8,13 +8,15 @@ extension KeyboardShortcuts.Name {
 @MainActor
 final class HotkeyController {
     private let pipeline: InferencePipeline
+    private let onStatus: (String) -> Void
     private let recorder = AudioRecorder()
     private var contextText = ""
     private var isRecording = false
     private var isBusy = false
 
-    init(pipeline: InferencePipeline) {
+    init(pipeline: InferencePipeline, onStatus: @escaping (String) -> Void) {
         self.pipeline = pipeline
+        self.onStatus = onStatus
         KeyboardShortcuts.onKeyDown(for: .pushToTalk) { [weak self] in
             self?.handleKeyDown()
         }
@@ -43,14 +45,22 @@ final class HotkeyController {
         let samples = recorder.stop()
         isBusy = true
         let context = contextText
+        onStatus("Working…")
         Task {
             defer { isBusy = false }
             do {
                 let output = try await pipeline.run(samples: samples, context: context)
-                Paster.paste(output)
+                let outcome = Paster.paste(output)
                 Feedback.finished()
+                switch outcome {
+                case .attempted:
+                    onStatus("Done — paste sent, also on clipboard")
+                case .accessibilityRequired:
+                    onStatus("On clipboard — Accessibility needed for auto-paste")
+                }
             } catch {
                 Log.pipeline.error("Run failed: \(error.localizedDescription, privacy: .public)")
+                onStatus("Failed — \(error.localizedDescription)")
             }
         }
     }

@@ -22,7 +22,11 @@ final class LLMEngine {
             .system(PromptBuilder.systemPrompt),
             .user(PromptBuilder.userMessage(context: context, instruction: instruction)),
         ])
-        let parameters = GenerateParameters(maxTokens: maxTokens, temperature: 0.2)
+        let parameters = GenerateParameters(
+            maxTokens: maxTokens,
+            temperature: 0,
+            repetitionPenalty: 1.1
+        )
         let result = try await container.perform { modelContext in
             let input = try await modelContext.processor.prepare(input: userInput)
             return try MLXLMCommon.generate(

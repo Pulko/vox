@@ -41,8 +41,13 @@ final class AppCoordinator: NSObject {
     }
 
     private func bootstrap() async {
-        setStatus("Requesting permissions…")
+        setStatus("Checking permissions…")
         await Permissions.requestAll()
+        if !Permissions.isAccessibilityTrusted {
+            setStatus("Toggle Vox off/on in Accessibility, then wait")
+            Log.app.error("Accessibility not trusted for this binary; Settings may list a previous build")
+        }
+        watchAccessibility()
 
         if !store.isComplete {
             await downloadModels()
@@ -50,6 +55,22 @@ final class AppCoordinator: NSObject {
         }
 
         await loadEngines()
+    }
+
+    private func watchAccessibility() {
+        Task { [weak self] in
+            while let self, !Task.isCancelled {
+                if Permissions.isAccessibilityTrusted {
+                    return
+                }
+                try? await Task.sleep(nanoseconds: 2_000_000_000)
+                if Permissions.isAccessibilityTrusted {
+                    self.setStatus("Accessibility granted")
+                    Log.app.info("Accessibility became trusted")
+                    return
+                }
+            }
+        }
     }
 
     private func downloadModels() async {
@@ -89,7 +110,11 @@ final class AppCoordinator: NSObject {
             let llm = try await LLMEngine(modelDirectory: store.llamaDirectory)
             self.transcriber = transcriber
             self.llm = llm
-            hotkey = HotkeyController(pipeline: InferencePipeline(transcriber: transcriber, llm: llm))
+            hotkey = HotkeyController(
+                pipeline: InferencePipeline(transcriber: transcriber, llm: llm)
+            ) { [weak self] text in
+                self?.setStatus(text)
+            }
             setStatus("Ready — hold Option-Space")
             Log.app.info("Vox is ready")
         } catch {
@@ -110,6 +135,21 @@ final class AppCoordinator: NSObject {
         status.isEnabled = false
         menu.addItem(status)
         menu.addItem(.separator())
+        let axItem = NSMenuItem(
+            title: "Open Accessibility Settings",
+            action: #selector(openAccessibility),
+            keyEquivalent: ""
+        )
+        axItem.target = self
+        menu.addItem(axItem)
+        let promptItem = NSMenuItem(
+            title: "Request Accessibility…",
+            action: #selector(promptAccessibility),
+            keyEquivalent: ""
+        )
+        promptItem.target = self
+        menu.addItem(promptItem)
+        menu.addItem(.separator())
         let quitItem = NSMenuItem(title: "Quit Vox", action: #selector(quit), keyEquivalent: "q")
         quitItem.target = self
         menu.addItem(quitItem)
@@ -120,6 +160,16 @@ final class AppCoordinator: NSObject {
 
     private func setStatus(_ text: String) {
         statusLabel?.title = text
+    }
+
+    @objc private func openAccessibility() {
+        Permissions.openAccessibilitySettings()
+    }
+
+    @objc private func promptAccessibility() {
+        _ = Permissions.requestAccessibilityPrompt()
+        Permissions.openAccessibilitySettings()
+        setStatus("Toggle Vox off/on in Accessibility")
     }
 
     @objc private func quit() {

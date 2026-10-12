@@ -1,16 +1,27 @@
 import AppKit
 import Foundation
 
+enum PasteOutcome {
+    case attempted
+    case accessibilityRequired
+}
+
 enum Paster {
-    static func paste(_ text: String) {
+    /// Keep this path deliberately simple. AX writes and repeated pasteboard writes
+    /// caused browser focus races; the original setString -> Cmd+V path was reliable.
+    static func paste(_ text: String) -> PasteOutcome {
         let pasteboard = NSPasteboard.general
-        let snapshot = PasteboardSnapshot(pasteboard: pasteboard)
         pasteboard.clearContents()
-        pasteboard.setString(text, forType: .string)
-        KeySynth.paste()
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-            snapshot.restore(to: pasteboard)
+        guard pasteboard.setString(text, forType: .string) else {
+            Log.pipeline.error("Failed to write clipboard")
+            return .attempted
         }
+        guard Permissions.isAccessibilityTrusted else {
+            Log.pipeline.error("Auto-paste skipped: Accessibility is not trusted for this build")
+            return .accessibilityRequired
+        }
+        KeySynth.paste()
+        return .attempted
     }
 }
 
