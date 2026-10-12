@@ -7,12 +7,14 @@ extension KeyboardShortcuts.Name {
 
 @MainActor
 final class HotkeyController {
-    private let pipeline: InferencePipeline
+    private var pipeline: InferencePipeline
     private let onStatus: (String) -> Void
     private let recorder = AudioRecorder()
     private var contextText = ""
     private var isRecording = false
     private var isBusy = false
+
+    var isOccupied: Bool { isBusy || isRecording }
 
     init(pipeline: InferencePipeline, onStatus: @escaping (String) -> Void) {
         self.pipeline = pipeline
@@ -24,6 +26,10 @@ final class HotkeyController {
             self?.handleKeyUp()
         }
         Log.input.info("Registered Option-Space push-to-talk")
+    }
+
+    func replacePipeline(_ pipeline: InferencePipeline) {
+        self.pipeline = pipeline
     }
 
     private func handleKeyDown() {

@@ -17,12 +17,13 @@ actor ModelDownloader {
     }
 
     func downloadAll() async throws {
-        if !store.llamaReady {
+        let llm = VoxPreferences.selectedLLM
+        if !store.isReady(llm) {
             try await downloadRepo(
-                ModelStore.llamaRepo,
+                llm.repo,
                 prefix: nil,
-                destination: store.llamaDirectory,
-                label: "Llama 3.2 3B"
+                destination: store.directory(for: llm),
+                label: llm.title
             )
         }
         if !store.whisperReady {

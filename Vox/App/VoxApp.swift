@@ -26,7 +26,7 @@ final class VoxApp: NSObject, NSApplicationDelegate {
 }
 
 @MainActor
-final class AppCoordinator: NSObject {
+final class AppCoordinator: NSObject, NSMenuDelegate {
     private let store = ModelStore()
     private var setup: SetupWindowController?
     private var transcriber: Transcriber?
@@ -34,6 +34,8 @@ final class AppCoordinator: NSObject {
     private var hotkey: HotkeyController?
     private var statusItem: NSStatusItem?
     private var statusLabel: NSMenuItem?
+    private var muteItem: NSMenuItem?
+    private var isSwitchingModel = false
 
     func start() {
         installStatusItem()
@@ -97,25 +99,72 @@ final class AppCoordinator: NSObject {
             try await ModelDownloader(store: store, progress: setup!.model).downloadAll()
             setup?.close()
             setup = nil
-            await loadEngines()
+            if transcriber == nil {
+                await loadEngines()
+            } else {
+                await reloadLLM()
+            }
         } catch {
             setup?.model.errorMessage = error.localizedDescription
         }
     }
 
+    private func loadedTranscriber() async throws -> Transcriber {
+        if let transcriber {
+            return transcriber
+        }
+        let transcriber = try await Transcriber(modelFolder: store.whisperDirectory)
+        self.transcriber = transcriber
+        return transcriber
+    }
+
+    private func attachLLM(using transcriber: Transcriber) async throws {
+        let llm = try await LLMEngine(modelDirectory: store.llmDirectory)
+        self.llm = llm
+        let pipeline = InferencePipeline(transcriber: transcriber, llm: llm)
+        if let hotkey {
+            hotkey.replacePipeline(pipeline)
+        } else {
+            hotkey = HotkeyController(pipeline: pipeline) { [weak self] text in
+                self?.setStatus(text)
+            }
+        }
+    }
+
+    private func reloadLLM() async {
+        setStatus("Loading \(VoxPreferences.selectedLLM.title)…")
+        do {
+            let transcriber = try await loadedTranscriber()
+            try await attachLLM(using: transcriber)
+            setStatus("Ready — \(VoxPreferences.selectedLLM.title)")
+        } catch {
+            Log.app.error("LLM reload failed: \(error.localizedDescription, privacy: .public)")
+            setStatus("Failed to load \(VoxPreferences.selectedLLM.title)")
+        }
+    }
+
+    private func switchToLLM(_ option: LLMOption) async {
+        guard !isSwitchingModel else { return }
+        if hotkey?.isOccupied == true {
+            setStatus("Wait — Vox is busy")
+            return
+        }
+        isSwitchingModel = true
+        defer { isSwitchingModel = false }
+        VoxPreferences.selectedLLM = option
+        if !store.isReady(option) {
+            await downloadModels()
+            guard store.isReady(option) else { return }
+        }
+        await reloadLLM()
+    }
+
     private func loadEngines() async {
         setStatus("Loading models…")
         do {
-            let transcriber = try await Transcriber(modelFolder: store.whisperDirectory)
-            let llm = try await LLMEngine(modelDirectory: store.llamaDirectory)
-            self.transcriber = transcriber
-            self.llm = llm
-            hotkey = HotkeyController(
-                pipeline: InferencePipeline(transcriber: transcriber, llm: llm)
-            ) { [weak self] text in
-                self?.setStatus(text)
-            }
-            setStatus("Ready — hold Option-Space")
+            let transcriber = try await loadedTranscriber()
+            try await attachLLM(using: transcriber)
+            setStatus("Ready — \(VoxPreferences.selectedLLM.title)")
             Log.app.info("Vox is ready")
         } catch {
             Log.app.error("Engine load failed: \(error.localizedDescription, privacy: .public)")
@@ -130,15 +179,17 @@ final class AppCoordinator: NSObject {
     private func installStatusItem() {
         let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         if let button = item.button {
-            button.image = Self.menuBarIcon
             button.imagePosition = .imageOnly
             button.title = ""
-            button.toolTip = "Vox"
         }
         let menu = NSMenu()
+        menu.delegate = self
         let status = NSMenuItem(title: "Starting…", action: nil, keyEquivalent: "")
         status.isEnabled = false
         menu.addItem(status)
+        menu.addItem(.separator())
+        menu.addItem(makeLLMMenu())
+        menu.addItem(makeSoundsMenu())
         menu.addItem(.separator())
         let axItem = NSMenuItem(
             title: "Open Accessibility Settings",
@@ -161,16 +212,88 @@ final class AppCoordinator: NSObject {
         item.menu = menu
         statusItem = item
         statusLabel = status
+        refreshStatusIcon()
+    }
+
+    func menuNeedsUpdate(_ menu: NSMenu) {
+        refreshSoundMenuState()
+        if let llmMenu = menu.items.first(where: { $0.title == "Language model" })?.submenu {
+            for item in llmMenu.items {
+                guard let id = item.representedObject as? String else { continue }
+                item.state = id == VoxPreferences.selectedLLM.id ? .on : .off
+            }
+        }
+    }
+
+    private func makeLLMMenu() -> NSMenuItem {
+        let item = NSMenuItem(title: "Language model", action: nil, keyEquivalent: "")
+        let submenu = NSMenu()
+        for option in LLMCatalog.all {
+            let entry = NSMenuItem(title: option.title, action: #selector(chooseLLM(_:)), keyEquivalent: "")
+            entry.target = self
+            entry.representedObject = option.id
+            entry.state = option.id == VoxPreferences.selectedLLM.id ? .on : .off
+            submenu.addItem(entry)
+        }
+        item.submenu = submenu
+        return item
+    }
+
+    private func makeSoundsMenu() -> NSMenuItem {
+        let item = NSMenuItem(title: "Sounds", action: nil, keyEquivalent: "")
+        let submenu = NSMenu()
+        let mute = NSMenuItem(title: "Mute", action: #selector(toggleMute), keyEquivalent: "")
+        mute.target = self
+        mute.state = VoxPreferences.soundsMuted ? .on : .off
+        submenu.addItem(mute)
+        muteItem = mute
+        submenu.addItem(.separator())
+        submenu.addItem(soundPicker(title: "Start", names: SoundCatalog.startOptions, action: #selector(chooseStartSound(_:))))
+        submenu.addItem(soundPicker(title: "Done", names: SoundCatalog.doneOptions, action: #selector(chooseDoneSound(_:))))
+        item.submenu = submenu
+        return item
+    }
+
+    private func soundPicker(title: String, names: [String], action: Selector) -> NSMenuItem {
+        let item = NSMenuItem(title: title, action: nil, keyEquivalent: "")
+        let submenu = NSMenu()
+        for name in names {
+            let entry = NSMenuItem(title: name, action: action, keyEquivalent: "")
+            entry.target = self
+            entry.representedObject = name
+            submenu.addItem(entry)
+        }
+        item.submenu = submenu
+        return item
+    }
+
+    private func refreshSoundMenuState() {
+        muteItem?.state = VoxPreferences.soundsMuted ? .on : .off
+        guard let sounds = muteItem?.menu else { return }
+        for item in sounds.items {
+            guard let submenu = item.submenu else { continue }
+            let selected = item.title == "Start" ? VoxPreferences.startSoundName : VoxPreferences.doneSoundName
+            for entry in submenu.items {
+                entry.state = (entry.representedObject as? String) == selected ? .on : .off
+            }
+        }
     }
 
     private func setStatus(_ text: String) {
         statusLabel?.title = text
     }
 
-    private static let menuBarIcon: NSImage = {
+    private func refreshStatusIcon() {
+        let muted = VoxPreferences.soundsMuted
+        statusItem?.button?.image = Self.makeMenuBarIcon(muted: muted)
+        statusItem?.button?.toolTip = muted ? "Vox — muted" : "Vox"
+    }
+
+    private static func makeMenuBarIcon(muted: Bool) -> NSImage {
         let size = NSSize(width: 18, height: 18)
         let image = NSImage(size: size, flipped: false) { _ in
             NSColor.black.setFill()
+            NSColor.black.setStroke()
             NSBezierPath(ovalIn: NSRect(x: 1.2, y: 1.2, width: 15.6, height: 15.6)).fill()
 
             NSGraphicsContext.current?.compositingOperation = .destinationOut
@@ -189,11 +312,48 @@ final class AppCoordinator: NSObject {
                 )
                 bar.fill()
             }
+            if muted {
+                let slash = NSBezierPath()
+                slash.lineWidth = 1.8
+                slash.lineCapStyle = .round
+                slash.move(to: NSPoint(x: 4.2, y: 13.6))
+                slash.line(to: NSPoint(x: 13.8, y: 4.4))
+                slash.stroke()
+            }
             return true
         }
         image.isTemplate = true
         return image
-    }()
+    }
+
+    @objc private func chooseLLM(_ sender: NSMenuItem) {
+        guard let id = sender.representedObject as? String else { return }
+        let option = LLMCatalog.option(id: id)
+        guard option.id != VoxPreferences.selectedLLM.id else { return }
+        Task { await switchToLLM(option) }
+    }
+
+    @objc private func toggleMute() {
+        VoxPreferences.soundsMuted.toggle()
+        refreshStatusIcon()
+        refreshSoundMenuState()
+    }
+
+    @objc private func chooseStartSound(_ sender: NSMenuItem) {
+        guard let name = sender.representedObject as? String else { return }
+        VoxPreferences.startSoundName = name
+        VoxPreferences.soundsMuted = false
+        refreshStatusIcon()
+        NSSound(named: name)?.play()
+    }
+
+    @objc private func chooseDoneSound(_ sender: NSMenuItem) {
+        guard let name = sender.representedObject as? String else { return }
+        VoxPreferences.doneSoundName = name
+        VoxPreferences.soundsMuted = false
+        refreshStatusIcon()
+        NSSound(named: name)?.play()
+    }
 
     @objc private func openAccessibility() {
         Permissions.openAccessibilitySettings()

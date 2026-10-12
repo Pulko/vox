@@ -22,6 +22,7 @@
 		72A7BB35B752AB4EF8702BF9 /* Permissions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8AAFD9360C202E4A4C89777C /* Permissions.swift */; };
 		9056DD27EAA6A3EB75AA83A3 /* MLXLMCommon in Frameworks */ = {isa = PBXBuildFile; productRef = D4EC59C7774AAF44CE3F39DB /* MLXLMCommon */; };
 		AC4CD040E160228918AAAB7A /* Transcriber.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52D5EEF7B6E61AA8C98539A3 /* Transcriber.swift */; };
+		B479CBF44EF09BBC8E3CD085 /* VoxPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = BED5B7D07BE84224C00E7BD9 /* VoxPreferences.swift */; };
 		BA8213BE44711356CC175A86 /* HotkeyController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 765339FA431857DD47E4304B /* HotkeyController.swift */; };
 		BDAB080CF526E04630095AF5 /* WhisperKit in Frameworks */ = {isa = PBXBuildFile; productRef = A3DFECF3FC30878DBBD5890D /* WhisperKit */; };
 		C29B8388B4428F09AFDB4538 /* Paster.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0A1E2E025B77A3468E2B69D /* Paster.swift */; };
@@ -47,6 +48,7 @@
 		A83000BDB7ECE1BC3AEDFFE6 /* LLMEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LLMEngine.swift; sourceTree = "<group>"; };
 		A92FC8745AB84A50F2A53935 /* PromptBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptBuilder.swift; sourceTree = "<group>"; };
 		A9B07E51CDF948F3FDE22A7A /* VoxApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoxApp.swift; sourceTree = "<group>"; };
+		BED5B7D07BE84224C00E7BD9 /* VoxPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoxPreferences.swift; sourceTree = "<group>"; };
 		C332CE35E14DA9EBC4A77E20 /* VoxError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoxError.swift; sourceTree = "<group>"; };
 		D2CCA3BF023059116C2E2EEC /* SetupWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetupWindow.swift; sourceTree = "<group>"; };
 		D9710503EACF38C4ADA63C9C /* Logger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Logger.swift; sourceTree = "<group>"; };
@@ -101,6 +103,7 @@
 			children = (
 				8AAFD9360C202E4A4C89777C /* Permissions.swift */,
 				A9B07E51CDF948F3FDE22A7A /* VoxApp.swift */,
+				BED5B7D07BE84224C00E7BD9 /* VoxPreferences.swift */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -244,6 +247,7 @@
 				AC4CD040E160228918AAAB7A /* Transcriber.swift in Sources */,
 				5B8057F6D8C5EF2692823EF8 /* VoxApp.swift in Sources */,
 				1855B4A4068E187FE7907CD4 /* VoxError.swift in Sources */,
+				B479CBF44EF09BBC8E3CD085 /* VoxPreferences.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

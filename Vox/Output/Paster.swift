@@ -27,10 +27,15 @@ enum Paster {
 
 enum Feedback {
     static func recordingStarted() {
-        NSSound(named: "Tink")?.play()
+        play(VoxPreferences.startSoundName)
     }
 
     static func finished() {
-        NSSound(named: "Glass")?.play()
+        play(VoxPreferences.doneSoundName)
+    }
+
+    private static func play(_ name: String) {
+        guard !VoxPreferences.soundsMuted else { return }
+        NSSound(named: name)?.play()
     }
 }
