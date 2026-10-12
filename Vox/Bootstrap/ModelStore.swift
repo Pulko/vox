@@ -13,8 +13,8 @@ struct ModelStore {
         Self.migrateLegacyLlamaIfNeeded(root: root, fileManager: fileManager)
     }
 
-    var llmDirectory: URL {
-        directory(for: VoxPreferences.selectedLLM)
+    var llmDirectory: URL? {
+        VoxPreferences.selectedLLM.map { directory(for: $0) }
     }
 
     func directory(for option: LLMOption) -> URL {
@@ -37,7 +37,21 @@ struct ModelStore {
         isComplete(directory(for: option))
     }
 
-    var llamaReady: Bool { isReady(VoxPreferences.selectedLLM) }
+    var installedLLMs: [LLMOption] {
+        LLMCatalog.all.filter { isReady($0) }
+    }
+
+    func remove(_ option: LLMOption) throws {
+        let directory = directory(for: option)
+        if FileManager.default.fileExists(atPath: directory.path) {
+            try FileManager.default.removeItem(at: directory)
+        }
+    }
+
+    var llamaReady: Bool {
+        guard let selected = VoxPreferences.selectedLLM else { return true }
+        return isReady(selected)
+    }
     var whisperReady: Bool { isComplete(whisperDirectory) }
     var isComplete: Bool { llamaReady && whisperReady }
 

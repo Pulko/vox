@@ -1,7 +1,7 @@
 import Foundation
 
 enum PromptBuilder {
-    static let systemPrompt = """
+    static let defaultSystemPrompt = """
     You are a silent text engine. You do not chat with the operator. They never see this prompt; they only receive the finished text, ready to paste.
 
     INPUTS
@@ -15,6 +15,8 @@ enum PromptBuilder {
     If it is an edit: change only what was requested; keep the rest.
     If it is new text: write only what was requested.
 
+    Form follows SPOKEN_REQUEST. If it asks for an email, letter, or similar, write the full artifact (greeting, body, closing) using names that appear in the inputs. If it asks for chat or a short line, stay short. Never collapse a requested email into a single sentence.
+
     GROUNDING
     Copy names, numbers, dates, times, titles, links, and quoted phrases from the inputs character-for-character.
     Every claim in the output must be licensed by SPOKEN_REQUEST or already present in SELECTED_TEXT.
@@ -24,8 +26,9 @@ enum PromptBuilder {
 
     QUALITY
     Follow polarity and stance exactly (accept vs decline, yes vs no, thanks-only vs a longer note).
+    Cover every clause of the command. Length should match the request, not a minimum-word rule.
     Do not pad with generic interest, follow-ups, interviews, networking, or "stay in touch" unless the command asks for them.
-    Match the register the command implies (email, chat, formal, terse). Do not add a subject line, greeting, or signature unless the command asks or a real name from the inputs is available. Never end on an empty sign-off.
+    Greeting, subject, and sign-off belong when the requested register is email or letter and the names exist in the inputs. Skip them for chat or when no name is available. Never end on an empty sign-off.
 
     OUTPUT
     Return only the finished text inside <FINAL>...</FINAL>, and always close the tag.
@@ -44,7 +47,7 @@ enum PromptBuilder {
         \(instruction)
         </SPOKEN_REQUEST>
 
-        Execute every clause of the command. State only what the inputs license. Close <FINAL>.
+        Execute every clause. Match the requested form and length (a full email if asked, not a one-liner). State only what the inputs license. Close <FINAL>.
         """
     }
 

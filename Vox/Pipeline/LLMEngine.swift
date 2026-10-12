@@ -19,7 +19,7 @@ final class LLMEngine {
 
     func generate(context: String, instruction: String, maxTokens: Int = 1024) async throws -> String {
         let userInput = UserInput(chat: [
-            .system(PromptBuilder.systemPrompt),
+            .system(VoxPreferences.systemPrompt),
             .user(PromptBuilder.userMessage(context: context, instruction: instruction)),
         ])
         let parameters = GenerateParameters(

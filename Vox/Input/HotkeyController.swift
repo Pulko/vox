@@ -7,7 +7,7 @@ extension KeyboardShortcuts.Name {
 
 @MainActor
 final class HotkeyController {
-    private var pipeline: InferencePipeline
+    private var pipeline: InferencePipeline?
     private let onStatus: (String) -> Void
     private let recorder = AudioRecorder()
     private var contextText = ""
@@ -32,8 +32,12 @@ final class HotkeyController {
         self.pipeline = pipeline
     }
 
+    func dropPipeline() {
+        pipeline = nil
+    }
+
     private func handleKeyDown() {
-        guard !isBusy, !isRecording else { return }
+        guard pipeline != nil, !isBusy, !isRecording else { return }
         contextText = ContextGrabber.grabSelectedText()
         do {
             try recorder.start()
@@ -55,6 +59,7 @@ final class HotkeyController {
         Task {
             defer { isBusy = false }
             do {
+                guard let pipeline else { return }
                 let output = try await pipeline.run(samples: samples, context: context)
                 let outcome = Paster.paste(output)
                 Feedback.finished()

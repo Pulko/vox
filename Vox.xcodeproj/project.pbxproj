@@ -20,6 +20,7 @@
 		6169BE7F670FD4016F71E75E /* DownloadProgress.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B6C281B5D99F1429D1E21EE /* DownloadProgress.swift */; };
 		6417AAB438CC07F24D6A0795 /* ModelStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E67186EB6F235C8F0EDE032 /* ModelStore.swift */; };
 		72A7BB35B752AB4EF8702BF9 /* Permissions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8AAFD9360C202E4A4C89777C /* Permissions.swift */; };
+		7A593E88C8F2D5ACCCCB3CCE /* PromptEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01F28AE3DFDC2EB76C6BA454 /* PromptEditor.swift */; };
 		9056DD27EAA6A3EB75AA83A3 /* MLXLMCommon in Frameworks */ = {isa = PBXBuildFile; productRef = D4EC59C7774AAF44CE3F39DB /* MLXLMCommon */; };
 		AC4CD040E160228918AAAB7A /* Transcriber.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52D5EEF7B6E61AA8C98539A3 /* Transcriber.swift */; };
 		B479CBF44EF09BBC8E3CD085 /* VoxPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = BED5B7D07BE84224C00E7BD9 /* VoxPreferences.swift */; };
@@ -33,6 +34,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		01F28AE3DFDC2EB76C6BA454 /* PromptEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptEditor.swift; sourceTree = "<group>"; };
 		0E67186EB6F235C8F0EDE032 /* ModelStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelStore.swift; sourceTree = "<group>"; };
 		2A94697A85465F1DDF25CB95 /* Vox.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Vox.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		36749971E2BB1FA7E92FC311 /* InferencePipeline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InferencePipeline.swift; sourceTree = "<group>"; };
@@ -102,6 +104,7 @@
 			isa = PBXGroup;
 			children = (
 				8AAFD9360C202E4A4C89777C /* Permissions.swift */,
+				01F28AE3DFDC2EB76C6BA454 /* PromptEditor.swift */,
 				A9B07E51CDF948F3FDE22A7A /* VoxApp.swift */,
 				BED5B7D07BE84224C00E7BD9 /* VoxPreferences.swift */,
 			);
@@ -243,6 +246,7 @@
 				C29B8388B4428F09AFDB4538 /* Paster.swift in Sources */,
 				72A7BB35B752AB4EF8702BF9 /* Permissions.swift in Sources */,
 				163D5344ADAB69CC3F54F8D1 /* PromptBuilder.swift in Sources */,
+				7A593E88C8F2D5ACCCCB3CCE /* PromptEditor.swift in Sources */,
 				4EED1A2751A2F0B196F55533 /* SetupWindow.swift in Sources */,
 				AC4CD040E160228918AAAB7A /* Transcriber.swift in Sources */,
 				5B8057F6D8C5EF2692823EF8 /* VoxApp.swift in Sources */,

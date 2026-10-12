@@ -17,8 +17,7 @@ actor ModelDownloader {
     }
 
     func downloadAll() async throws {
-        let llm = VoxPreferences.selectedLLM
-        if !store.isReady(llm) {
+        if let llm = VoxPreferences.selectedLLM, !store.isReady(llm) {
             try await downloadRepo(
                 llm.repo,
                 prefix: nil,
